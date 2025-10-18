@@ -30,8 +30,9 @@ function App() {
       timezone: form.timezone, // creator's selection
       startUtc: form.startUtc,
       endUtc: form.endUtc,
-      createdAt: form.startUtc, // storing creator's perceived start as createdAt is ambiguous; backend will compute
-      updatedAt: form.startUtc,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      logs: [],
     }
     setEvents((prev) => [newEvt, ...prev])
     setViewTz(form.timezone)
@@ -64,11 +65,38 @@ function App() {
             events={events}
             selectedProfileId={selectedProfileId}
             timezone={viewTz}
-            onUpdateEvent={(id, patch) =>
-              setEvents((prev) =>
-                prev.map((e) => (e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e))
-              )
-            }
+            profiles={profiles}
+            onUpdateEvent={(id, patch) => {
+              setEvents((prev) => {
+                return prev.map((e) => {
+                  if (e.id !== id) return e
+                  const changes = []
+                  const fields = ['startUtc', 'endUtc', 'timezone', 'profileIds']
+                  fields.forEach((f) => {
+                    if (patch[f] === undefined) return
+                    const before = e[f]
+                    const after = patch[f]
+                    // Compare arrays by stringified order-insensitive
+                    if (Array.isArray(before) && Array.isArray(after)) {
+                      const a = [...before].sort().join(',')
+                      const b = [...after].sort().join(',')
+                      if (a !== b) changes.push({ field: f, from: before, to: after })
+                    } else if (before !== after) {
+                      changes.push({ field: f, from: before, to: after })
+                    }
+                  })
+                  const logEntry = changes.length
+                    ? { at: new Date().toISOString(), changes }
+                    : null
+                  return {
+                    ...e,
+                    ...patch,
+                    updatedAt: new Date().toISOString(),
+                    logs: logEntry ? [logEntry, ...(e.logs || [])] : (e.logs || []),
+                  }
+                })
+              })
+            }}
             onDeleteEvent={(id) =>
               setEvents((prev) => prev.filter((e) => e.id !== id))
             }

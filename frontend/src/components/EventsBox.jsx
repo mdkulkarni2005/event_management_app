@@ -53,6 +53,8 @@ const EventsBox = ({
     setEditingId(null)
   }
 
+  const [openLogsId, setOpenLogsId] = useState(null)
+
   return (
     <section className="box">
       <h2 className="box-title">Events</h2>
@@ -135,8 +137,33 @@ const EventsBox = ({
                   </div>
                   <div className="form-actions">
                     <button onClick={() => startEdit(evt)}>Edit</button>
+                    <button style={{ marginLeft: 8, background: '#f3f4f6', color: '#374151' }} onClick={() => setOpenLogsId(openLogsId === evt.id ? null : evt.id)}>View Logs</button>
                     <button style={{ marginLeft: 8, background: '#ef4444' }} onClick={() => setConfirmId(evt.id)}>Delete</button>
                   </div>
+                  {openLogsId === evt.id && (evt.logs && evt.logs.length > 0) && (
+                    <div className="event-logs" style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {evt.logs.map((log, idx) => (
+                          <li key={idx} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 8 }}>
+                            <div className="event-log-time" style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 6 }}>
+                              Updated: {formatInTz(log.at, timezone, 'MMM DD, YYYY [at] hh:mm A')}
+                            </div>
+                            <div className="event-log-changes" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {log.changes.map((c, ci) => (
+                                <div key={ci}>
+                                  <strong style={{ textTransform: 'capitalize' }}>{c.field}:</strong>{' '}
+                                  <span style={{ color: '#6b7280' }}>from</span>{' '}
+                                  {renderValue(c.field, c.from, timezone, profiles)}{' '}
+                                  <span style={{ color: '#6b7280' }}>to</span>{' '}
+                                  {renderValue(c.field, c.to, timezone, profiles)}
+                                </div>
+                              ))}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </li>
@@ -156,3 +183,17 @@ const EventsBox = ({
 }
 
 export default EventsBox
+
+function renderValue(field, value, tz, profiles) {
+  if (field === 'startUtc' || field === 'endUtc') {
+    return <em>{formatInTz(value, tz)}</em>
+  }
+  if (field === 'timezone') {
+    return <code>{value}</code>
+  }
+  if (field === 'profileIds' && Array.isArray(value)) {
+    const names = value.map((id) => profiles.find((p) => p.id === id)?.name || '—')
+    return <span>{names.join(', ')}</span>
+  }
+  return <span>{String(value)}</span>
+}

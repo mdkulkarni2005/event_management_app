@@ -30,15 +30,11 @@ function App() {
       timezone: form.timezone, // creator's selection
       startUtc: form.startUtc,
       endUtc: form.endUtc,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: form.startUtc, // storing creator's perceived start as createdAt is ambiguous; backend will compute
+      updatedAt: form.startUtc,
     }
     setEvents((prev) => [newEvt, ...prev])
     setViewTz(form.timezone)
-  }
-
-  const handleDeleteEvent = (id) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id))
   }
 
   const appName = 'Event Management System'
@@ -68,14 +64,14 @@ function App() {
             events={events}
             selectedProfileId={selectedProfileId}
             timezone={viewTz}
-            profiles={profiles}
             onUpdateEvent={(id, patch) =>
               setEvents((prev) =>
                 prev.map((e) => (e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e))
               )
             }
-            onDeleteEvent={handleDeleteEvent}
-            onChangeViewTimezone={setViewTz}
+            onDeleteEvent={(id) =>
+              setEvents((prev) => prev.filter((e) => e.id !== id))
+            }
           />
         </div>
       </main>

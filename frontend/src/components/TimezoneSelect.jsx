@@ -101,7 +101,7 @@ const TimezoneSelect = ({ id, value, onChange, placeholder = 'Search timezone…
     setQuery('')
   }
 
-  const currentLabel = value || '\u2014 Select timezone \u2014'
+  const currentLabel = value ? friendly(value) : '\u2014 Select timezone \u2014'
 
   return (
     <div className="tzsel" ref={containerRef}>

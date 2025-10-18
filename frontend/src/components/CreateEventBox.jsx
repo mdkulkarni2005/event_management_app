@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { fromLocalParts, toUTCISO, isEndAfterStart } from '../utils/date'
 import TimezoneSelect from './TimezoneSelect'
+import Modal from './Modal'
+import ProfileSelect from './ProfileSelect'
 
 const CreateEventBox = ({
   profiles,
@@ -17,6 +19,8 @@ const CreateEventBox = ({
     endDate: '',
     endTime: '',
   })
+  const [showModal, setShowModal] = useState(false)
+  const [profileName, setProfileName] = useState('')
 
   // keep profile in sync if parent selection changes
   React.useEffect(() => {
@@ -30,21 +34,7 @@ const CreateEventBox = ({
 
   const update = (key) => (e) => setForm({ ...form, [key]: e.target.value })
 
-  const handleProfileChange = (e) => {
-    const select = e.target
-    const values = Array.from(select.selectedOptions).map((o) => o.value)
-    if (values.includes('__create__')) {
-      const name = window.prompt('Enter new profile name:')
-      if (name && name.trim()) {
-        const newId = onCreateProfile(name.trim())
-        if (newId) onSelectProfile(newId)
-      } else {
-        // no change
-      }
-      return
-    }
-    setForm({ ...form, profileIds: values })
-  }
+  // profile selection handled by ProfileSelect
 
   const submit = (e) => {
     e.preventDefault()
@@ -80,23 +70,20 @@ const CreateEventBox = ({
       <form onSubmit={submit} className="form-grid">
         <div className="form-row">
           <label htmlFor="ce-profiles">Profiles</label>
-          <select
+          <ProfileSelect
             id="ce-profiles"
-            multiple
-            value={form.profileIds}
-            onChange={handleProfileChange}
-            size={Math.min(6, Math.max(3, profiles.length || 3))}
-          >
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-            <option value="__create__">+ Create new profile…</option>
-          </select>
+            profiles={profiles}
+            multiple={true}
+            selectedIds={form.profileIds}
+            onChange={(ids) => setForm({ ...form, profileIds: ids })}
+            onRequestAdd={() => setShowModal(true)}
+          />
         </div>
 
         <div className="form-row">
           <label htmlFor="ce-timezone">Timezone</label>
           <TimezoneSelect id="ce-timezone" value={form.timezone} onChange={update('timezone')} />
+          <small className="hint muted">Selected: {form.timezone}</small>
         </div>
 
         <div className="form-row two-col">
@@ -125,6 +112,40 @@ const CreateEventBox = ({
           <button type="submit">Create Event</button>
         </div>
       </form>
+
+      <Modal open={showModal} title="Create new profile" onClose={() => setShowModal(false)}>
+        <div className="form-grid">
+          <div className="form-row">
+            <label htmlFor="ce-profile-name">Profile name</label>
+            <input
+              id="ce-profile-name"
+              type="text"
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              placeholder="e.g., Sales Team"
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={() => {
+                const name = profileName.trim()
+                if (!name) return
+                const id = onCreateProfile(name)
+                if (id) {
+                  // add to current selection
+                  setForm((f) => ({ ...f, profileIds: Array.from(new Set([...(f.profileIds || []), id])) }))
+                  onSelectProfile(id)
+                }
+                setShowModal(false)
+              }}
+            >
+              Create
+            </button>
+            <button type="button" style={{ marginLeft: 8 }} onClick={() => setShowModal(false)}>Cancel</button>
+          </div>
+        </div>
+      </Modal>
     </section>
   )
 }

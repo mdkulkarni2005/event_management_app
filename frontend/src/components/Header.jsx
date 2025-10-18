@@ -1,38 +1,62 @@
 import React from 'react'
+import Modal from './Modal'
+import ProfileSelect from './ProfileSelect'
 
 const Header = ({ appName, subtitle, profiles, selectedProfileId, onSelectProfile, onCreateProfile }) => {
-  const handleProfileChange = (e) => {
-    const value = e.target.value
-    if (value === '__create__') {
-      const name = window.prompt('Enter new profile name:')
-      if (name && name.trim()) {
-        const newId = onCreateProfile(name.trim())
-        if (newId) onSelectProfile(newId)
-      } else {
-        // revert to previous selection if canceled
-        e.target.value = selectedProfileId || ''
-      }
-      return
-    }
-    onSelectProfile(value)
-  }
+  const [showModal, setShowModal] = React.useState(false)
+  const [profileName, setProfileName] = React.useState('')
+  // selection handled by ProfileSelect
 
   return (
     <header className="app-header">
       <div className="app-header__top">
         <h1 className="app-title">{appName}</h1>
-        <div className="profile-select">
+        <div className="profile-select" style={{ minWidth: 240 }}>
           <label htmlFor="currentProfile" className="sr-only">Current Profile</label>
-          <select id="currentProfile" value={selectedProfileId || ''} onChange={handleProfileChange}>
-            {profiles.length === 0 && <option value="" disabled>No profiles</option>}
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-            <option value="__create__">+ Create new profile…</option>
-          </select>
+          <ProfileSelect
+            id="currentProfile"
+            profiles={profiles}
+            multiple={false}
+            selectedId={selectedProfileId || ''}
+            onChange={(id) => id === '__create__' ? setShowModal(true) : onSelectProfile(id)}
+            onRequestAdd={() => setShowModal(true)}
+          />
         </div>
       </div>
       {subtitle && <p className="app-subtitle">{subtitle}</p>}
+
+      <Modal
+        open={showModal}
+        title="Create new profile"
+        onClose={() => setShowModal(false)}
+      >
+        <div className="form-grid">
+          <div className="form-row">
+            <label htmlFor="profile-name">Profile name</label>
+            <input
+              id="profile-name"
+              type="text"
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              placeholder="e.g., Marketing Team"
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              onClick={() => {
+                const name = profileName.trim()
+                if (!name) return
+                const id = onCreateProfile(name)
+                if (id) onSelectProfile(id)
+                setShowModal(false)
+              }}
+            >
+              Create
+            </button>
+            <button style={{ marginLeft: 8 }} onClick={() => setShowModal(false)}>Cancel</button>
+          </div>
+        </div>
+      </Modal>
     </header>
   )
 }

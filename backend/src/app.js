@@ -1,11 +1,30 @@
 import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
+import mongoose from 'mongoose'
 import healthRouter from './routes/health.js'
 import profilesRouter from './routes/profiles.js'
 import eventsRouter from './routes/events.js'
 
 const app = express()
+
+// Connect to MongoDB
+const connectDB = async () => {
+  const mongoUri = process.env.MONGODB_URI
+  if (!mongoUri) {
+    console.warn('[db] MONGODB_URI not set')
+    return
+  }
+  try {
+    mongoose.set('strictQuery', true)
+    await mongoose.connect(mongoUri, { autoIndex: true })
+    console.log('[db] connected')
+  } catch (e) {
+    console.error('[db] connection failed:', e.message)
+  }
+}
+
+connectDB()
 
 app.use(cors())
 app.use(express.json())

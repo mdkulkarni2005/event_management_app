@@ -20,11 +20,11 @@ const EventsBox = ({
 
   const myEvents = useMemo(() => {
     if (!selectedProfileId) return []
-    return events.filter((e) => e.profileIds.includes(selectedProfileId))
+    return events.filter((e) => Array.isArray(e.profileIds) && e.profileIds.includes(selectedProfileId))
   }, [events, selectedProfileId])
 
   const startEdit = (evt) => {
-    setEditingId(evt.id)
+    setEditingId(evt._id)
     const tz = evt.timezone || timezone
     setEditTz(tz)
     setEditProfiles(evt.profileIds || [])
@@ -44,7 +44,7 @@ const EventsBox = ({
     if (!isEndAfterStart(d.startDate, d.startTime, d.endDate, d.endTime, editTz)) return
     const startZ = fromLocalParts(d.startDate, d.startTime, editTz)
     const endZ = fromLocalParts(d.endDate, d.endTime, editTz)
-    onUpdateEvent(evt.id, {
+    onUpdateEvent(evt._id, {
       startUtc: toUTCISO(startZ),
       endUtc: toUTCISO(endZ),
       timezone: editTz,
@@ -65,8 +65,8 @@ const EventsBox = ({
       ) : (
         <ul className="event-list">
           {myEvents.map((evt) => (
-            <li key={evt.id} className="event-item">
-              {editingId === evt.id ? (
+            <li key={evt._id} className="event-item">
+              {editingId === evt._id ? (
                 <Modal open={true} title="Edit Event" onClose={() => setEditingId(null)}>
                   <div className="form-grid">
                     <div className="form-row">
@@ -137,10 +137,10 @@ const EventsBox = ({
                   </div>
                   <div className="form-actions">
                     <button onClick={() => startEdit(evt)}>Edit</button>
-                    <button style={{ marginLeft: 8, background: '#f3f4f6', color: '#374151' }} onClick={() => setOpenLogsId(openLogsId === evt.id ? null : evt.id)}>View Logs</button>
-                    <button style={{ marginLeft: 8, background: '#ef4444' }} onClick={() => setConfirmId(evt.id)}>Delete</button>
+                    <button style={{ marginLeft: 8, background: '#f3f4f6', color: '#374151' }} onClick={() => setOpenLogsId(openLogsId === evt._id ? null : evt._id)}>View Logs</button>
+                    <button style={{ marginLeft: 8, background: '#ef4444' }} onClick={() => setConfirmId(evt._id)}>Delete</button>
                   </div>
-                  {openLogsId === evt.id && (evt.logs && evt.logs.length > 0) && (
+                  {openLogsId === evt._id && (evt.logs && evt.logs.length > 0) && (
                     <div className="event-logs" style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
                       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {evt.logs.map((log, idx) => (
